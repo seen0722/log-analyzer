@@ -104,4 +104,4 @@ If you want to run the code locally without Docker:
 The UI supports inputting keys directly, but you can configure defaults:
 
 - **OpenAI**: Set `OPENAI_API_KEY` in `.env` or Docker env.
-- **Cambrian**: Select "Cambrian" model in UI and input your Token. Connection tests are available in the UI.
+- **Cambrian**: Set `CAMBRIAN_TOKEN` in `.env` or Docker env. Alternatively, select "Cambrian" in the UI and input your Token.
