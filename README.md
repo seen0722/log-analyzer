@@ -77,7 +77,7 @@ If you want to run the code locally without Docker:
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/seen0516/log-analyzer.git
+   git clone https://github.com/seen0722/log-analyzer.git
    cd log-analyzer
    ```
 
