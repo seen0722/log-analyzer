@@ -10,8 +10,12 @@ async def test_api_connection(provider, api_key):
     try:
         if provider == "cambrian":
             # Test Cambrian Connection (List Models)
+            final_key = api_key or os.getenv("CAMBRIAN_TOKEN")
+            if not final_key:
+                return False, "No Cambrian Token provided and none found in environment."
+
             async with httpx.AsyncClient(verify=False) as client:
-                headers = {"Authorization": f"Bearer {api_key}"}
+                headers = {"Authorization": f"Bearer {final_key}"}
                 response = await client.get(
                     "https://api.cambrian.pegatroncorp.com/assistant/llm_model", 
                     headers=headers, 

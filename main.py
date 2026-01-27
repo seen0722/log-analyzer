@@ -54,6 +54,7 @@ async def analyze_logs(
 ):
     # Use provided key or fallback to env var for OpenAI
     final_openai_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+    final_cambrian_token = cambrian_token or os.getenv("CAMBRIAN_TOKEN")
     
     # Analyze logic handles which key to use based on model
     
@@ -87,7 +88,7 @@ async def analyze_logs(
         analysis_result = await analyze_with_llm(
             parsed_data, 
             openai_api_key=final_openai_key, 
-            cambrian_token=cambrian_token, 
+            cambrian_token=final_cambrian_token, 
             model=model
         )
         

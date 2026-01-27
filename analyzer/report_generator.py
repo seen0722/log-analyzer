@@ -45,15 +45,24 @@ def generate_pdf_report(markdown_content, session_id, report_dir):
     # 3. Convert to PDF (using Headless Chrome)
             
     # 3. Convert to PDF (using Headless Chrome)
-    # This assumes Chrome is installed at the standard macOS location
-    chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    # Detect Chrome Path
+    chrome_path = os.getenv("CHROME_BIN")
     
-    if os.path.exists(chrome_path):
+    if not chrome_path:
+        if os.path.exists("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"):
+            chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" # macOS
+        elif os.path.exists("/usr/bin/chromium"):
+             chrome_path = "/usr/bin/chromium" # Linux (Alpine/Debian)
+        elif os.path.exists("/usr/bin/google-chrome"):
+             chrome_path = "/usr/bin/google-chrome" # Linux (Ubuntu)
+
+    if chrome_path and os.path.exists(chrome_path):
         try:
              subprocess.run([
                 chrome_path,
                 "--headless",
                 "--disable-gpu",
+                "--no-sandbox", # Required for Docker
                 f"--print-to-pdf={pdf_path}",
                 f"file://{html_path}"
              ], check=True)

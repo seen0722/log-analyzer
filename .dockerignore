@@ -1,0 +1,12 @@
+__pycache__
+venv
+.git
+.gitignore
+.env
+uploads/
+reports/
+*.zip
+*.log
+*.trace
+bugreport*
+doc/
