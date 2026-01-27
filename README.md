@@ -59,6 +59,22 @@ docker run -d \
      seen0516/log-analyzer:latest
    ```
 
+### 4. Deploy with Docker Compose (Recommended for Production)
+
+1. Ensure you have a `docker-compose.yml` and `.env` file in your directory.
+2. Run:
+   ```bash
+   docker-compose up -d
+   ```
+   To view logs:
+   ```bash
+   docker-compose logs -f
+   ```
+   To stop:
+   ```bash
+   docker-compose down
+   ```
+
 ### 4. Access the UI
 Open your browser and navigate to:
 [http://localhost:8000](http://localhost:8000) (or your server IP)

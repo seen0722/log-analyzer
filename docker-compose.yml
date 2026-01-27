@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  log-analyzer:
+    image: seen0516/log-analyzer:latest
+    container_name: log-analyzer
+    restart: always
+    ports:
+      - "8000:8000"
+    # Environment variables can be set here or in a .env file in the same directory
+    env_file:
+      - .env
+    environment:
+      # You can override specific variables here if needed
+      - CHROME_BIN=/usr/bin/chromium
+      # - OPENAI_API_KEY=your_key_here
+      # - CAMBRIAN_TOKEN=your_token_here
+    volumes:
+      # Persist uploads and reports if needed
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
