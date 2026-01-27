@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Log Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Log Analyzer</h1>
+            <p>Upload a file (ZIP, TXT, LOG) containing Android logs for instant RCA.</p>
+        </header>
+
+        <main>
+            <div class="model-section" style="margin-bottom: 1.5rem; text-align: left;">
+                <label for="model-select">Select Model</label>
+                <select id="model-select" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: white;">
+                    <option value="gpt-4o" selected>GPT-4o (Recommended - Stable)</option>
+                    <option value="cambrian-llama-3.3-70b">Cambrian - LLAMA 3.3 70B (Internal)</option>
+                    <option value="o1-preview" disabled>OpenAI o1-preview (Requires Tier 5 API)</option>
+                    <option value="o1-mini" disabled>OpenAI o1-mini (Requires Tier 3+ API)</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Faster/Cheaper)</option>
+                </select>
+            </div>
+
+            <!-- OpenAI Key Section -->
+            <div id="openai-section" class="input-group" style="margin-bottom: 1.5rem; text-align: left;">
+                <label for="api-key">OpenAI API Key</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="password" id="api-key" placeholder="sk-..." style="flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <button type="button" onclick="testConnection('openai')" class="btn secondary" style="padding: 0.75rem 1rem;">Test</button>
+                </div>
+                <div id="openai-status" style="margin-top: 5px; font-size: 0.85em;"></div>
+            </div>
+
+            <!-- Cambrian Token Section -->
+            <div id="cambrian-section" class="input-group" style="margin-bottom: 1.5rem; text-align: left; display: none;">
+                <label for="cambrian-token">Cambrian API Token</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="password" id="cambrian-token" placeholder="Enter Cambrian Token" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <button type="button" onclick="testConnection('cambrian')" class="btn secondary" style="padding: 0.75rem 1rem;">Test</button>
+                </div>
+                <div id="cambrian-status" style="margin-top: 5px; font-size: 0.85em;"></div>
+            </div>
+
+            <div class="upload-area" id="drop-zone">
+                <div class="icon">📁</div>
+                <h3>Drag & Drop File Here</h3>
+                <p>ZIP, TXT, LOG supported</p>
+                <input type="file" id="file-input" accept=".zip,.txt,.log,.trace" hidden>
+            </div>
+
+            <div class="file-info" id="file-info" style="display: none;">
+                <span id="file-name">filename.zip</span>
+                <button id="remove-file">✕</button>
+            </div>
+
+            <button id="analyze-btn" disabled>Analyze Logs</button>
+
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing specific logs... This may take a minute.</p>
+                <p class="sub-text">Extracting -> Parsing -> AI Analysis -> Generating Report</p>
+            </div>
+
+            <div class="results" id="results" style="display: none;">
+                <h2>Analysis Complete!</h2>
+                <div class="download-links">
+                    <a href="#" id="dl-pdf" class="btn secondary" target="_blank">📄 Download PDF</a>
+                    <a href="#" id="dl-html" class="btn secondary" target="_blank">🌐 View HTML</a>
+                    <a href="#" id="dl-md" class="btn secondary" target="_blank">📝 Download Markdown</a>
+                </div>
+            </div>
+            
+            <div class="error" id="error-msg" style="display: none;"></div>
+        </main>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const removeFile = document.getElementById('remove-file');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const apiKeyInput = document.getElementById('api-key');
+        const modelSelect = document.getElementById('model-select');
+        const openaiSection = document.getElementById('openai-section');
+        const cambrianSection = document.getElementById('cambrian-section');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorMsg = document.getElementById('error-msg');
+
+        let selectedFile = null;
+        let envKeyLoaded = false;
+
+        // Model Selection Logic
+        modelSelect.addEventListener('change', () => {
+             const model = modelSelect.value;
+             if (model.startsWith('cambrian')) {
+                 openaiSection.style.display = 'none';
+                 cambrianSection.style.display = 'block';
+             } else {
+                 openaiSection.style.display = 'block';
+                 cambrianSection.style.display = 'none';
+             }
+             checkReady();
+        });
+
+        // Test Connection Logic
+        async function testConnection(provider) {
+            const statusDiv = document.getElementById(provider + '-status');
+            const keyInput = provider === 'openai' ? apiKeyInput : document.getElementById('cambrian-token');
+            const key = keyInput.value;
+            
+            // Allow testing if env key is loaded for openai
+            if (!key && provider === 'openai' && !envKeyLoaded) {
+                 statusDiv.innerHTML = '<span style="color:red">Please enter a key first</span>';
+                 return;
+            }
+            if (!key && provider === 'cambrian') {
+                 statusDiv.innerHTML = '<span style="color:red">Please enter a token first</span>';
+                 return;
+            }
+
+            statusDiv.innerHTML = '<span style="color:gray">Testing connection...</span>';
+            
+            try {
+                const response = await fetch('/test_connection', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ provider: provider, api_key: key })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    statusDiv.innerHTML = `<span class="badge success" style="color:green">✓ ${data.message}</span>`;
+                } else {
+                    statusDiv.innerHTML = `<span class="badge error" style="color:red">✗ ${data.message}</span>`;
+                }
+            } catch (e) {
+                statusDiv.innerHTML = `<span class="badge error" style="color:red">Error: ${e.message}</span>`;
+            }
+        }
+
+        // Check for Env Key on Load
+        fetch('/config')
+            .then(res => res.json())
+            .then(data => {
+                if (data.has_api_key) {
+                    envKeyLoaded = true;
+                    apiKeyInput.placeholder = "Using default key from .env";
+                    const status = document.getElementById('openai-status');
+                    status.innerHTML = '<span class="badge success" style="color:green">✓ Env Key Loaded</span>';
+                    checkReady();
+                }
+            });
+
+        // Drag & Drop
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('active');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('active');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        function handleFile(file) {
+            const validExts = ['.zip', '.txt', '.log', '.trace'];
+            const isValid = validExts.some(ext => file.name.endsWith(ext));
+
+            if (file && isValid) {
+                selectedFile = file;
+                fileName.textContent = file.name;
+                dropZone.style.display = 'none';
+                fileInfo.style.display = 'flex';
+                checkReady();
+            } else {
+                alert('Please upload a valid file (.zip, .txt, .log, .trace)');
+            }
+        }
+
+        removeFile.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.style.display = 'none';
+            dropZone.style.display = 'flex';
+            analyzeBtn.disabled = true;
+            results.style.display = 'none';
+            errorMsg.style.display = 'none';
+        });
+
+        apiKeyInput.addEventListener('input', checkReady);
+        document.getElementById('cambrian-token').addEventListener('input', checkReady);
+
+        function checkReady() {
+            const isCambrian = modelSelect.value.startsWith('cambrian');
+            let keyValid = false;
+            
+            if (isCambrian) {
+                keyValid = document.getElementById('cambrian-token').value.length > 5;
+            } else {
+                keyValid = apiKeyInput.value.length > 10 || envKeyLoaded;
+            }
+            
+            analyzeBtn.disabled = !(selectedFile && keyValid);
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            errorMsg.style.display = 'none';
+            analyzeBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            // Send both keys, let backend pick
+            if (apiKeyInput.value) formData.append('openai_api_key', apiKeyInput.value);
+            const cambToken = document.getElementById('cambrian-token').value;
+            if (cambToken) formData.append('cambrian_token', cambToken);
+            
+            // Query param for model
+            const url = `/analyze?model=${encodeURIComponent(modelSelect.value)}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    loading.style.display = 'none';
+                    results.style.display = 'block';
+                    
+                    document.getElementById('dl-pdf').href = `/reports/${data.reports.pdf}`;
+                    document.getElementById('dl-html').href = `/reports/${data.reports.html}`;
+                    document.getElementById('dl-md').href = `/reports/${data.reports.md}`;
+                    
+                    if (!data.reports.pdf) document.getElementById('dl-pdf').style.display = 'none';
+                } else {
+                    throw new Error(data.error || 'Analysis failed');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                errorMsg.textContent = `Error: ${error.message}`;
+                errorMsg.style.display = 'block';
+                analyzeBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>RCA Report (ZH)</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">RCA Report (ZH)</h1>
+</header>
+<h1 id="root-cause-analysis-rca-keypad-unresponsive-system-anr">Root
+Cause Analysis (RCA): Keypad Unresponsive &amp; System ANR</h1>
+<h2 id="問題摘要-executive-summary">1. 問題摘要 (Executive Summary)</h2>
+<p>使用者喚醒裝置 (DVT3 Thorpe, OS-02.01.01.260119) 時，發生
+<strong>System Server ANR</strong> (Application Not
+Responding)，導致按鍵無反應 (Keypad stopped working)
+及無法截圖。系統稍後自動恢復。</p>
+<p>經過 Log 分析，確認根本原因 (Root Cause) 為 <strong>GNSS HAL
+卡死</strong> 導致 <code>system_server</code> 的關鍵執行緒
+(<code>android.fg</code>) 堵塞，進而卡住了螢幕喚醒流程。</p>
+<h2 id="根本原因-root-cause">2. 根本原因 (Root Cause)</h2>
+<p><strong>GNSS HAL (GPS) 在進行 QMI 通訊時發生逾時 (Timeout)，導致
+<code>system_server</code> 內的 <code>android.fg</code>
+執行緒被長時間卡住。</strong></p>
+<ol type="1">
+<li><strong>GNSS HAL Timeout</strong>: 在 15:31:26 左右，GNSS Service
+試圖透過 QMI 介面停止定位 session (<code>LOC_STOP</code>) 和設定運作模式
+(<code>LOC_SET_OPERATION_MODE</code>)。</li>
+<li><strong>QMI 無回應</strong>: 底層 Modem 或 QMI 介面無回應。經過 25
+秒後 (15:31:51)，出現 <code>Function timed out</code> 和
+<code>qcError 110</code> 錯誤。</li>
+<li><strong>System Server 堵塞</strong>: <code>system_server</code> 的
+<code>android.fg</code> 執行緒 (TID 1755) 此時正呼叫
+<code>GnssHal::stop()</code> 並等待回應。由於 HAL
+層卡住，導致此執行緒一直處於 <code>UNINTERRUPTIBLE_SLEEP</code>
+或等待鎖定的狀態 (&gt; 15秒)。</li>
+<li><strong>ANR 觸發</strong>: 當使用者嘗試喚醒螢幕時，系統廣播
+<code>android.intent.action.SCREEN_ON</code>。此廣播由
+<code>android.fg</code> 執行緒負責派發。因為該執行緒已卡死在 GNSS
+HAL，導致廣播無法處理，最終觸發 Watchdog ANR。</li>
+</ol>
+<h2 id="證據-evidence">3. 證據 (Evidence)</h2>
+<h3 id="anr-資訊">ANR 資訊</h3>
+<ul>
+<li><strong>時間</strong>: <code>01-27 15:32:09.418</code></li>
+<li><strong>進程</strong>: <code>system_server</code> (PID 1702)</li>
+<li><strong>原因</strong>:
+<code>Broadcast of Intent { act=android.intent.action.SCREEN_ON ... }</code></li>
+<li><strong>卡住的執行緒</strong>: <code>android.fg</code> (TID
+1755)</li>
+</ul>
+<h3 id="stack-trace-android.fg">Stack Trace (android.fg)</h3>
+<p>該執行緒卡在
+<code>android::hardware::gnss::V1_0::BpHwGnss::_hidl_stop</code>
+等待回傳： &gt; <strong>Source</strong>:
+<code>FS/data/anr/anr_2026-01-27-15-32-09-441</code> (Lines 443-463)</p>
+<pre class="text"><code>&quot;android.fg&quot; sysTid=1755
+  #00 pc 00000000000c12ec  /apex/com.android.runtime/lib64/bionic/libc.so (__ioctl+12)
+  ...
+  #06 pc 00000000000a5ec8  /system/lib64/android.hardware.gnss@1.0.so (android::hardware::gnss::V1_0::BpHwGnss::_hidl_stop...+260)
+  #07 pc 0000000000033d50  /system/lib64/libservices.core-gnss.so (android::gnss::GnssHal::stop()+160)
+  ...
+  #16 pc 0000000000256af0  /system/framework/services.jar (com.android.server.location.gnss.GnssLocationProvider.stopNavigating+44)</code></pre>
+<h3 id="gnss-hal-error-logs-logcat">GNSS HAL Error Logs (Logcat)</h3>
+<p>系統嘗試停止 GPS 時發生 Timeout： &gt; <strong>Source</strong>:
+<code>bugreport-T70-AQ3A.250408.001-2026-01-27-15-33-02.txt</code></p>
+<pre class="text"><code>(Line 22444) 01-27 15:31:26.891 ... I SWIGNSS : Stop:
+(Line 22447) 01-27 15:31:26.891 ... D SWIGNSS : -&gt; ... Send 11 bytes ...
+... (25秒無回應) ...
+(Line 22668) 01-27 15:31:51.818 ... W SWIGNSS : Function timed out
+(Line 22670) 01-27 15:31:51.818 ... E SWIGNSS : swigps_setPosMode: Stop failed, qcError 110</code></pre>
+<h2 id="影響分析-impact-analysis">4. 影響分析 (Impact Analysis)</h2>
+<ul>
+<li><strong>為何 Keypad 失效？</strong>: 按鍵事件 (Key events) 雖然由
+InputDispatcher 接收，但需要上層 WindowManager Service (WMS) 和
+PowerManager Service (PMS) 處理喚醒邏輯。這些關鍵服務依賴
+<code>android.fg</code> 執行緒。當該執行緒卡死，系統無法完成
+“從睡眠中喚醒” 的狀態轉換，導致對使用者輸入無反應。</li>
+<li><strong>為何無法截圖？</strong>: 截圖功能同樣依賴
+<code>system_server</code>
+處理按鍵組合及畫面捕捉通知，因為核心服務卡死而無法執行。</li>
+</ul>
+<h2 id="建議-recommendations">5. 建議 (Recommendations)</h2>
+<ol type="1">
+<li><strong>檢查 Modem/GNSS 狀態</strong>: 需由 Modem 團隊分析 QMI log
+(如果有的話) 或 Modem dump，確認為何 QMI 在 15:31:26 左右對
+<code>LOC_STOP</code> 指令無回應。可能是 Modem
+處於錯誤狀態或深眠導致喚醒失敗。</li>
+<li><strong>HAL 層防護</strong>: 建議即使底層 Timeout，HAL
+層應儘快回傳錯誤給 System Server，避免長時間 (超過 10-20秒) 阻塞主執行緒
+(<code>android.fg</code>)，以防止整機 ANR。</li>
+</ol>
+</body>
+</html>
