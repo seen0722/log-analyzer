@@ -85,7 +85,7 @@ async def analyze_with_llm(log_evidence, openai_api_key=None, cambrian_token=Non
        - Blocked Thread:
 
        ### Stack Trace / Logs
-       > **Source**: filename.txt_ (Lines 10-20)
+       > **Source**: filename.txt
        
        ```plaintext
        [Code content]
