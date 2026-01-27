@@ -36,7 +36,7 @@ You need to provide your API Key via environment variables.
 
 ```bash
 docker run -d \
-  -p 8000:8000 \
+  -p 8001:8000 \
   --name log-analyzer \
   --restart always \
   -e OPENAI_API_KEY="sk-proj-..." \
@@ -52,7 +52,7 @@ docker run -d \
 2. Run the container:
    ```bash
    docker run -d \
-     -p 8000:8000 \
+     -p 8001:8000 \
      --name log-analyzer \
      --restart always \
      --env-file .env \
@@ -75,9 +75,9 @@ docker run -d \
    docker-compose down
    ```
 
-### 4. Access the UI
+### 5. Access the UI
 Open your browser and navigate to:
-[http://localhost:8000](http://localhost:8000) (or your server IP)
+[http://localhost:8001](http://localhost:8001) (or your server IP)
 
 ---
 

@@ -6,7 +6,7 @@ services:
     container_name: log-analyzer
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8001:8000"
     # Security options for Chrome/Chromium (PDF generation) and threading stability
     security_opt:
       - seccomp:unconfined
