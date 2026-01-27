@@ -4,13 +4,18 @@ services:
   log-analyzer:
     image: seen0516/log-analyzer:latest
     container_name: log-analyzer
-    restart: always
+    restart: unless-stopped
     ports:
       - "8000:8000"
+    # Security options for Chrome/Chromium (PDF generation) and threading stability
+    security_opt:
+      - seccomp:unconfined
     # Environment variables can be set here or in a .env file in the same directory
     env_file:
       - .env
     environment:
+      # Fix for OpenBLAS threading issue on some hosts
+      - OPENBLAS_NUM_THREADS=1
       # You can override specific variables here if needed
       - CHROME_BIN=/usr/bin/chromium
       # - OPENAI_API_KEY=your_key_here
