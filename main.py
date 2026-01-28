@@ -1,4 +1,7 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException
+# ... (imports)
+
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 import pydantic
@@ -34,7 +37,10 @@ async def read_index():
 @app.get("/config")
 async def get_config():
     """Returns public configuration status (not secret keys)"""
-    return {"has_api_key": bool(os.getenv("OPENAI_API_KEY"))}
+    return {
+        "has_api_key": bool(os.getenv("OPENAI_API_KEY")),
+        "has_cambrian_token": bool(os.getenv("CAMBRIAN_TOKEN"))
+    }
 
 class ConnectionTestRequest(pydantic.BaseModel):
     provider: str
@@ -48,8 +54,8 @@ async def test_connection_endpoint(request: ConnectionTestRequest):
 @app.post("/analyze")
 async def analyze_logs(
     file: UploadFile = File(...), 
-    openai_api_key: str = None, 
-    cambrian_token: str = None,
+    openai_api_key: str = Form(None), 
+    cambrian_token: str = Form(None),
     model: str = "gpt-4o"
 ):
     # Use provided key or fallback to env var for OpenAI

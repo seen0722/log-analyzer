@@ -100,6 +100,7 @@
 
         let selectedFile = null;
         let envKeyLoaded = false;
+        let envCambrianLoaded = false;
 
         // Model Selection Logic
         modelSelect.addEventListener('change', () => {
@@ -125,7 +126,7 @@
                  statusDiv.innerHTML = '<span style="color:red">Please enter a key first</span>';
                  return;
             }
-            if (!key && provider === 'cambrian') {
+            if (!key && provider === 'cambrian' && !envCambrianLoaded) {
                  statusDiv.innerHTML = '<span style="color:red">Please enter a token first</span>';
                  return;
             }
@@ -153,13 +154,19 @@
         fetch('/config')
             .then(res => res.json())
             .then(data => {
-                if (data.has_api_key) {
                     envKeyLoaded = true;
                     apiKeyInput.placeholder = "Using default key from .env";
                     const status = document.getElementById('openai-status');
                     status.innerHTML = '<span class="badge success" style="color:green">✓ Env Key Loaded</span>';
-                    checkReady();
                 }
+                if (data.has_cambrian_token) {
+                    envCambrianLoaded = true;
+                    const cambrianInput = document.getElementById('cambrian-token');
+                    cambrianInput.placeholder = "Using default token from .env";
+                    const status = document.getElementById('cambrian-status');
+                    status.innerHTML = '<span class="badge success" style="color:green">✓ Env Token Loaded</span>';
+                }
+                checkReady();
             });
 
         // Drag & Drop
@@ -209,7 +216,7 @@
             let keyValid = false;
             
             if (isCambrian) {
-                keyValid = document.getElementById('cambrian-token').value.length > 5;
+                keyValid = document.getElementById('cambrian-token').value.length > 5 || envCambrianLoaded;
             } else {
                 keyValid = apiKeyInput.value.length > 10 || envKeyLoaded;
             }
