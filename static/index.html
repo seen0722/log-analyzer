@@ -154,6 +154,7 @@
         fetch('/config')
             .then(res => res.json())
             .then(data => {
+                if (data.has_api_key) {
                     envKeyLoaded = true;
                     apiKeyInput.placeholder = "Using default key from .env";
                     const status = document.getElementById('openai-status');
